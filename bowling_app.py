@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 import sqlite3
 from datetime import datetime
 import os
+from flask import send_from_directory, make_response
 
 app = Flask(__name__)
 DATABASE = 'bowling.db'
@@ -638,6 +639,22 @@ def update_roll(outing_id):
         'number': number,
         'scores': scores
     })
+
+# ============================================================================
+# RUTAS PWA (Progressive Web App)
+# ============================================================================
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def service_worker():
+    response = make_response(send_from_directory('static', 'sw.js'))
+    # Es crucial definir el Content-Type correcto para el Service Worker
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
+
 
 if __name__ == '__main__':
     if not os.path.exists(DATABASE):
