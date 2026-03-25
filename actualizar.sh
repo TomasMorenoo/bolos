@@ -5,7 +5,6 @@ cd /vps/clientes/bolos
 git pull
 
 # Volver un nivel y reconstruir los contenedores
-cd ..
 docker compose up -d --build
 
 echo "✅ ¡Todo listo y corriendo!"
