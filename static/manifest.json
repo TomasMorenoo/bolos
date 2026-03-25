@@ -1,11 +1,14 @@
 {
-  "name": "Bowling Tracker",
+  "id": "/bolos-app/",
+  "name": "Bolos App",
   "short_name": "Bolos",
   "description": "App para anotar puntuaciones de bowling",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/static/icon-192.png",
