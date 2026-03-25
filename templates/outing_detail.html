@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}{{ outing.location }} - {{ outing.date }}{% endblock %}
+
+{% block content %}
+<h1>{{ outing.location }}</h1>
+<p style="color: #666; font-size: 18px; margin-bottom: 30px;">{{ outing.date }}</p>
+
+<div id="error-message" class="error" style="display: none;"></div>
+<div id="success-message" class="success" style="display: none;"></div>
+
+{% if not game_data %}
+<div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #ffc107;">
+    <h3 style="color: #856404; margin-bottom: 10px;">No hay jugadores en esta salida</h3>
+    <p style="color: #856404;">Agrega jugadores abajo para comenzar la partida.</p>
+</div>
+{% endif %}
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+    <h2 style="margin-bottom: 20px;">Agregar Jugador a esta Partida</h2>
+    <form method="POST" action="/outing/{{ outing.id }}/add_player">
+        <div class="form-group">
+            <label for="player_id">Seleccionar Jugador</label>
+            <select id="player_id" name="player_id" required style="width: auto; min-width: 300px;">
+                <option value="">-- Selecciona un jugador --</option>
+                {% for player in all_players %}
+                <option value="{{ player.id }}">{{ player.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit">Agregar Jugador</button>
+    </form>
+</div>
+
+{% if game_data %}
+<h2>Tabla de Partida</h2>
+
+<div style="overflow-x: auto; margin-top: 20px;">
+    <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <thead>
+            <tr>
+                <th style="border: 2px solid #333; padding: 10px; background: #667eea; color: white; text-align: center; min-width: 120px; position: sticky; left: 0; z-index: 10;">
+                    Jugador
+                </th>
+                {% for i in range(1, 11) %}
+                <th style="border: 2px solid #333; padding: 10px; background: #667eea; color: white; text-align: center; min-width: 100px;">
+                    {{ i }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody id="game-table-body">
+            {% for player_data in game_data %}
+            <tr data-player-id="{{ player_data.player.id }}" data-final-score="{{ player_data.final_score or 0 }}">
+                <td style="border: 2px solid #333; padding: 15px; background: #f8f9fa; font-weight: 600; position: sticky; left: 0; z-index: 5;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>{{ player_data.player.name }}</span>
+                        {% if player_data.player.final_position %}
+                        <span style="background: #ffd700; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-left: 10px;">
+                            #{{ player_data.player.final_position }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </td>
+                
+                {% for frame in player_data.frames %}
+                <td style="border: 2px solid #333; padding: 0; vertical-align: top;">
+                    <div style="display: flex; flex-direction: column; height: 100%;">
+                        <!-- Tiros -->
+                        <div style="display: flex; min-height: 60px; border-bottom: 2px solid #333;">
+                            {% if frame.frame_number <= 9 %}
+                                <!-- Frames 1-9 -->
+                                <input type="text" 
+                                       class="roll-input"
+                                       maxlength="1"
+                                       data-player="{{ player_data.player.id }}"
+                                       data-frame="{{ frame.frame_number }}"
+                                       data-roll="1"
+                                       value="{{ frame.display_1 }}"
+                                       style="flex: 1; border: none; border-right: 2px solid #333; text-align: center; font-size: 20px; font-weight: bold; background: #fafafa; text-transform: uppercase;">
+                                
+                                <input type="text" 
+                                       class="roll-input"
+                                       maxlength="1"
+                                       data-player="{{ player_data.player.id }}"
+                                       data-frame="{{ frame.frame_number }}"
+                                       data-roll="2"
+                                       value="{{ frame.display_2 }}"
+                                       style="flex: 1; border: none; text-align: center; font-size: 20px; font-weight: bold; background: #fafafa; text-transform: uppercase;">
+                            {% else %}
+                                <!-- Frame 10 -->
+                                <input type="text" 
+                                       class="roll-input"
+                                       maxlength="1"
+                                       data-player="{{ player_data.player.id }}"
+                                       data-frame="{{ frame.frame_number }}"
+                                       data-roll="1"
+                                       value="{{ frame.display_1 }}"
+                                       style="flex: 1; border: none; border-right: 2px solid #333; text-align: center; font-size: 20px; font-weight: bold; background: #fafafa; text-transform: uppercase;">
+                                
+                                <input type="text" 
+                                       class="roll-input"
+                                       maxlength="1"
+                                       data-player="{{ player_data.player.id }}"
+                                       data-frame="{{ frame.frame_number }}"
+                                       data-roll="2"
+                                       value="{{ frame.display_2 }}"
+                                       style="flex: 1; border: none; border-right: 2px solid #333; text-align: center; font-size: 20px; font-weight: bold; background: #fafafa; text-transform: uppercase;">
+                                
+                                <input type="text" 
+                                       class="roll-input"
+                                       maxlength="1"
+                                       data-player="{{ player_data.player.id }}"
+                                       data-frame="{{ frame.frame_number }}"
+                                       data-roll="3"
+                                       value="{{ frame.display_3 }}"
+                                       style="flex: 1; border: none; text-align: center; font-size: 20px; font-weight: bold; background: #fafafa; text-transform: uppercase;">
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Score -->
+                        <div style="padding: 10px; text-align: center; background: white; min-height: 45px; display: flex; align-items: center; justify-content: center;">
+                            <span class="frame-score" 
+                                  data-player="{{ player_data.player.id }}"
+                                  data-frame="{{ frame.frame_number }}"
+                                  style="font-size: 24px; font-weight: bold; color: #667eea;">
+                                {% if frame.score is not none %}{{ frame.score }}{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 30px 0;">
+    <h3 style="color: #333; margin-bottom: 10px;">Cómo usar</h3>
+    <ul style="list-style-position: inside; color: #666; line-height: 1.8;">
+        <li>Escribe directamente en cada casilla el resultado del tiro</li>
+        <li>Usa <strong>X</strong> para strike, <strong>/</strong> para spare, <strong>0-9</strong> para pinos, <strong>-</strong> para cero</li>
+        <li>Presiona <strong>Enter</strong> o sal de la casilla para guardar</li>
+        <li>Los puntajes se calculan automáticamente</li>
+        <li>Los jugadores se ordenan automáticamente por puntaje (mayor a menor)</li>
+    </ul>
+</div>
+{% endif %}
+
+<div>
+    <a href="/outings" class="btn" style="background: #6c757d;">← Volver a Salidas</a>
+</div>
+
+<script>
+const outingId = {{ outing.id }};
+
+// Inicializar estados de inputs al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    disableStrikeFollowingInputs();
+});
+
+function disableStrikeFollowingInputs() {
+    // Buscar todos los strikes en frames 1-9 y deshabilitar el segundo tiro
+    document.querySelectorAll('.roll-input[data-roll="1"]').forEach(input => {
+        const frameNum = parseInt(input.dataset.frame);
+        if (frameNum <= 9 && input.value === 'X') {
+            const playerId = input.dataset.player;
+            const nextInput = document.querySelector(
+                `.roll-input[data-player="${playerId}"][data-frame="${frameNum}"][data-roll="2"]`
+            );
+            if (nextInput) {
+                nextInput.disabled = true;
+                nextInput.style.background = '#e9ecef';
+                nextInput.style.cursor = 'not-allowed';
+                nextInput.value = '';
+            }
+        }
+    });
+}
+
+// Agregar event listeners a todos los inputs
+document.querySelectorAll('.roll-input').forEach(input => {
+    // Guardar al presionar Enter
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur(); // Trigger el evento blur
+        }
+    });
+    
+    // Guardar al salir del input
+    input.addEventListener('blur', function() {
+        const symbol = this.value.trim().toUpperCase();
+        
+        if (symbol === '') return;
+        
+        const playerId = this.dataset.player;
+        const frameNum = parseInt(this.dataset.frame);
+        const rollNum = parseInt(this.dataset.roll);
+        
+        // --- NUEVA VALIDACIÓN EN VIVO ---
+        const error = validarReglas(symbol, frameNum, rollNum, playerId);
+        if (error) {
+            showError(error);
+            this.value = ''; // Borramos el valor inválido
+            this.classList.add('error-pulse'); // Opcional: efecto visual
+            return; // Detenemos el guardado
+        }
+        // --------------------------------
+        
+        updateRoll(playerId, frameNum, rollNum, symbol, this);
+    });
+
+    // Función de validación con mensajes educativos
+function validarReglas(symbol, frameNum, rollNum, playerId) {
+    // --- VALIDACIÓN DE STRIKE (X) ---
+    if (symbol === 'X') {
+        // Caso: Poner X en el segundo tiro de los frames 1-9
+        if (frameNum <= 9 && rollNum !== 1) {
+            return "⛔ Error: No puedes poner 'X' (Strike) en el segundo tiro.\n" +
+                   "💡 Regla: El Strike es derribar los 10 pines en el PRIMER intento. " +
+                   "Si los derribas en el segundo (ej: 0 y luego todo), se considera Spare y debes usar el símbolo '/'.";
+        }
+        
+        // Caso: Poner X en el segundo tiro del frame 10 sin haber hecho Strike antes
+        if (frameNum === 10 && rollNum === 2) {
+            const val1 = getValorInput(frameNum, 1, playerId);
+            if (val1 !== 10) {
+                return "⛔ Error: No puedes marcar Strike 'X' aquí.\n" +
+                       "💡 Regla: En el Frame 10, solo puedes tirar otra 'X' si hiciste Strike en el tiro anterior. " +
+                       "Si sumas 10 con los dos tiros (ej: " + val1 + " + " + (10-val1) + "), usa '/' (Spare).";
+            }
+        }
+    }
+
+    // --- VALIDACIÓN MATEMÁTICA (SUMA > 10) ---
+    let currentVal = 0;
+    if (symbol === 'X') currentVal = 10;
+    else if (symbol === '/' || symbol === '-') currentVal = 0;
+    else if (!isNaN(symbol)) currentVal = parseInt(symbol);
+
+    // Validar suma en frames normales o frame 10 (sin strike previo)
+    if (rollNum === 2) {
+        const val1 = getValorInput(frameNum, 1, playerId);
+        
+        // Si el primero no fue Strike (val1 < 10), la suma no puede pasar de 10
+        if (val1 < 10) {
+            if (val1 + currentVal > 10) {
+                const restante = 10 - val1;
+                return `⛔ Error Matemático: ${val1} + ${currentVal} = ${val1 + currentVal} pines.\n` +
+                       `💡 Regla: Solo hay 10 pines en la pista. Si tiraste ${val1} en el primero, ` +
+                       `solo quedan ${restante} pines posibles para derribar.`;
+            }
+        }
+    }
+    
+    // Validación especial para el bonus del Frame 10
+    if (frameNum === 10 && rollNum === 3) {
+        const val1 = getValorInput(frameNum, 1, playerId);
+        const val2 = getValorInput(frameNum, 2, playerId);
+        
+        // Si hizo Strike, luego algo normal (ej: X, 4), el tercero no puede sumar más de lo que queda
+        if (val1 === 10 && val2 < 10 && symbol !== '/' && symbol !== 'X') {
+             if (val2 + currentVal > 10) {
+                 const restante = 10 - val2;
+                 return `⛔ Error en Bonus: ${val2} + ${currentVal} excede el límite.\n` +
+                        `💡 Regla: Después del Strike inicial, los siguientes dos tiros comparten los 10 pines ` +
+                        `a menos que hagas otro Strike o Spare. Quedaban ${restante} pines.`;
+             }
+        }
+    }
+
+    return null; // Todo correcto
+}
+
+    // Helper para obtener el valor numérico de un input anterior
+    function getValorInput(frame, roll, playerId) {
+        const input = document.querySelector(
+            `.roll-input[data-player="${playerId}"][data-frame="${frame}"][data-roll="${roll}"]`
+        );
+        if (!input) return 0;
+        
+        const val = input.value.trim().toUpperCase();
+        if (val === 'X') return 10;
+        if (val === '–' || val === '-') return 0;
+        if (val === '') return 0;
+        // Si es número
+        if (!isNaN(val)) return parseInt(val);
+        return 0;
+    }
+    
+    // Convertir a mayúsculas mientras escribe
+    input.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Seleccionar todo al hacer focus
+    input.addEventListener('focus', function() {
+        this.select();
+    });
+});
+
+function updateRoll(playerId, frameNum, rollNum, symbol, inputElement) {
+    fetch(`/outing/${outingId}/update_roll`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            player_id: playerId,
+            frame_number: frameNum,
+            roll_number: rollNum,
+            symbol: symbol
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            showError(data.error);
+            // Restaurar valor anterior
+            inputElement.value = '';
+            inputElement.focus();
+            return;
+        }
+        
+        // Actualizar el input con el símbolo convertido
+        const displaySymbol = convertToDisplay(data.number, frameNum, rollNum, playerId);
+        inputElement.value = displaySymbol;
+        
+        // Si es strike en frames 1-9, deshabilitar el segundo tiro
+        if (displaySymbol === 'X' && rollNum === '1' && parseInt(frameNum) <= 9) {
+            const nextInput = document.querySelector(
+                `.roll-input[data-player="${playerId}"][data-frame="${frameNum}"][data-roll="2"]`
+            );
+            if (nextInput) {
+                nextInput.disabled = true;
+                nextInput.style.background = '#e9ecef';
+                nextInput.style.cursor = 'not-allowed';
+                nextInput.value = '';
+            }
+        }
+        
+        // Si no es strike, habilitar el segundo tiro
+        if (rollNum === '1' && parseInt(frameNum) <= 9) {
+            const nextInput = document.querySelector(
+                `.roll-input[data-player="${playerId}"][data-frame="${frameNum}"][data-roll="2"]`
+            );
+            if (nextInput && displaySymbol !== 'X') {
+                nextInput.disabled = false;
+                nextInput.style.background = '#fafafa';
+                nextInput.style.cursor = 'text';
+            }
+        }
+        
+        // Actualizar scores
+        updateScores(playerId, data.scores);
+        
+        showSuccess('✓');
+        
+        // Recargar página para actualizar ordenamiento
+        // Solo si hay al menos un jugador con score completo
+        const hasCompletedGames = data.scores[9] !== null;
+        if (hasCompletedGames) {
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
+    })
+    .catch(error => {
+        showError('Error al guardar: ' + error);
+        inputElement.value = '';
+    });
+}
+
+function convertToDisplay(number, frameNum, rollNum, playerId) {
+    if (number === null || number === '') return '';
+    if (number === 10) return 'X';
+    if (number === 0) return '–';
+    
+    // Detectar spare
+    if (rollNum >= 2) {
+        const prevInput = document.querySelector(
+            `.roll-input[data-player="${playerId}"][data-frame="${frameNum}"][data-roll="${parseInt(rollNum) - 1}"]`
+        );
+        if (prevInput) {
+            const prevText = prevInput.value.trim();
+            let prevValue = 0;
+            
+            if (prevText === 'X') {
+                prevValue = 10;
+            } else if (prevText === '–') {
+                prevValue = 0;
+            } else if (prevText !== '') {
+                prevValue = parseInt(prevText) || 0;
+            }
+            
+            if (prevValue + number === 10 && prevValue !== 10) {
+                return '/';
+            }
+        }
+    }
+    
+    return number.toString();
+}
+
+function updateScores(playerId, scores) {
+    scores.forEach((score, index) => {
+        const scoreCell = document.querySelector(
+            `.frame-score[data-player="${playerId}"][data-frame="${index + 1}"]`
+        );
+        if (scoreCell) {
+            scoreCell.textContent = score !== null ? score : '';
+            
+            // Animar el cambio
+            scoreCell.style.transition = 'all 0.3s';
+            scoreCell.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                scoreCell.style.transform = 'scale(1)';
+            }, 300);
+        }
+    });
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('error-message');
+    // Usamos innerText para que respete los \n como saltos de línea
+    errorDiv.innerText = message; 
+    
+    // Estilos mejorados para la explicación
+    errorDiv.style.display = 'block';
+    errorDiv.style.whiteSpace = 'pre-line'; // Importante para ver las dos líneas
+    errorDiv.style.textAlign = 'left';
+    errorDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    errorDiv.style.borderLeft = '6px solid #dc3545';
+    
+    // Aumentamos el tiempo a 6 segundos para que lleguen a leer la explicación
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 6000);
+}
+
+function showSuccess(message) {
+    const successDiv = document.getElementById('success-message');
+    successDiv.textContent = message;
+    successDiv.style.display = 'block';
+    setTimeout(() => {
+        successDiv.style.display = 'none';
+    }, 1500);
+}
+</script>
+
+<style>
+.roll-input:focus {
+    outline: 2px solid #667eea;
+    background: #fff !important;
+}
+
+.roll-input::placeholder {
+    color: #ccc;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.success {
+    animation: fadeIn 0.3s;
+}
+</style>
+{% endblock %}

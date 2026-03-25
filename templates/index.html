@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Bowling Tracker - Inicio{% endblock %}
+
+{% block content %}
+<h1>🎳 Bowling Score Tracker</h1>
+
+<div style="margin-top: 40px;">
+    <h2>Bienvenido</h2>
+    <p style="font-size: 18px; color: #666; line-height: 1.6;">
+        Sistema de registro de partidas de bowling. Cada salida es una partida completa donde múltiples jugadores pueden competir.
+    </p>
+    
+    <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; text-align: center;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">Salidas</h3>
+            <p style="margin-bottom: 20px; color: #666;">Crea una salida, agrega jugadores y empieza a jugar</p>
+            <a href="/outings" class="btn">Ver Salidas</a>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; text-align: center;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">Jugadores</h3>
+            <p style="margin-bottom: 20px; color: #666;">Gestiona jugadores y consulta estadísticas históricas</p>
+            <a href="/players" class="btn">Ver Jugadores</a>
+        </div>
+    </div>
+    
+    <div style="margin-top: 40px; background: #e7f3ff; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
+        <h3 style="color: #333; margin-bottom: 10px;">Cómo funciona</h3>
+        <ol style="list-style-position: inside; color: #666; line-height: 2;">
+            <li>Crea jugadores en la sección de Jugadores</li>
+            <li>Crea una Salida con fecha y lugar</li>
+            <li>Agrega jugadores a la salida</li>
+            <li>Carga los tiros directamente en la tabla</li>
+            <li>Las estadísticas se actualizan automáticamente</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

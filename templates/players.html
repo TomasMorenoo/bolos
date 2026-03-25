@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Jugadores{% endblock %}
+
+{% block content %}
+<h1>Jugadores</h1>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+    <h2 style="margin-bottom: 20px;">Agregar Nuevo Jugador</h2>
+    <form method="POST" action="/players">
+        <div class="form-group">
+            <label for="name">Nombre del Jugador</label>
+            <input type="text" id="name" name="name" required placeholder="Ej: Juan Pérez">
+        </div>
+        <button type="submit">Agregar Jugador</button>
+    </form>
+</div>
+
+<h2>Lista de Jugadores</h2>
+
+{% if players %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <thead>
+                <tr style="background: #667eea; color: white;">
+                    <th style="padding: 15px; text-align: left; border: 1px solid #ddd;">Nombre</th>
+                    <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">Partidas</th>
+                    <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">Puntos Totales</th>
+                    <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">Promedio</th>
+                    <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr style="{% if loop.index % 2 == 0 %}background: #f8f9fa;{% endif %}">
+                    <td style="padding: 15px; border: 1px solid #ddd; font-weight: 600;">{{ player.name }}</td>
+                    <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">{{ player.total_games }}</td>
+                    <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">{{ player.total_score }}</td>
+                    <td style="padding: 15px; border: 1px solid #ddd; text-align: center; color: #667eea; font-weight: bold;">
+                        {{ "%.1f"|format(player.average_score) if player.average_score else "—" }}
+                    </td>
+                    <td style="padding: 15px; border: 1px solid #ddd; text-align: center;">
+                        <a href="/player/{{ player.id }}" class="btn" style="padding: 8px 16px; font-size: 14px;">Ver Perfil</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p style="color: #666; font-style: italic;">No hay jugadores registrados aún.</p>
+{% endif %}
+{% endblock %}

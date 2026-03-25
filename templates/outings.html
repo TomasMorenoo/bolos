@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Salidas{% endblock %}
+
+{% block content %}
+<h1>Salidas de Bowling</h1>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+    <h2 style="margin-bottom: 20px;">Crear Nueva Salida</h2>
+    <form method="POST" action="/outings">
+        <div class="form-group">
+            <label for="date">Fecha</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="location">Lugar</label>
+            <input type="text" id="location" name="location" required placeholder="Ej: Bowling Center CABA">
+        </div>
+        <button type="submit">Crear Salida</button>
+    </form>
+</div>
+
+<h2>Historial de Salidas</h2>
+
+{% if outings %}
+    <div>
+        {% for outing in outings %}
+        <div class="list-item">
+            <div>
+                <div style="font-weight: 600; font-size: 18px; margin-bottom: 5px;">{{ outing.location }}</div>
+                <div style="color: #666;">{{ outing.date }}</div>
+            </div>
+            <a href="/outing/{{ outing.id }}" class="btn">Ver Detalle</a>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p style="color: #666; font-style: italic;">No hay salidas registradas aún.</p>
+{% endif %}
+{% endblock %}
