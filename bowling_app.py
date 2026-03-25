@@ -17,69 +17,47 @@ def get_db():
     return conn
 
 def init_db():
-    """Inicializar la base de datos con el nuevo modelo"""
+    """Inicializar y actualizar esquema de base de datos con Strikes y Spares"""
     conn = get_db()
     cursor = conn.cursor()
     
-    # Tabla de jugadores (solo info básica y estadísticas)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
-            total_games INTEGER DEFAULT 0,
-            total_score INTEGER DEFAULT 0,
-            average_score REAL DEFAULT 0.0
-        )
-    ''')
+    # 1. Crear tablas base (idéntico a lo anterior)
+    cursor.execute('CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, total_games INTEGER DEFAULT 0, total_score INTEGER DEFAULT 0, average_score REAL DEFAULT 0.0)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS outings (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, location TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS outing_players (id INTEGER PRIMARY KEY AUTOINCREMENT, outing_id INTEGER NOT NULL, player_id INTEGER NOT NULL, final_score INTEGER, FOREIGN KEY (outing_id) REFERENCES outings(id) ON DELETE CASCADE, FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE, UNIQUE(outing_id, player_id))')
+    cursor.execute('CREATE TABLE IF NOT EXISTS frames (id INTEGER PRIMARY KEY AUTOINCREMENT, outing_id INTEGER NOT NULL, player_id INTEGER NOT NULL, frame_number INTEGER NOT NULL, roll_1 INTEGER, roll_2 INTEGER, roll_3 INTEGER, is_strike BOOLEAN DEFAULT 0, is_spare BOOLEAN DEFAULT 0, FOREIGN KEY (outing_id) REFERENCES outings(id) ON DELETE CASCADE, FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE, UNIQUE(outing_id, player_id, frame_number))')
     
-    # Tabla de salidas (cada salida es una partida)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS outings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            location TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    # 2. Migraciones: Agregar columnas strikes_count, spares_count y final_position
+    cursor.execute("PRAGMA table_info(outing_players)")
+    columns = [column[1] for column in cursor.fetchall()]
     
-    # Relación muchos a muchos: salida <-> jugadores
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS outing_players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            outing_id INTEGER NOT NULL,
-            player_id INTEGER NOT NULL,
-            final_score INTEGER,
-            FOREIGN KEY (outing_id) REFERENCES outings(id) ON DELETE CASCADE,
-            FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-            UNIQUE(outing_id, player_id)
-        )
-    ''')
-    
-    # Tabla de frames por salida y jugador
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS frames (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            outing_id INTEGER NOT NULL,
-            player_id INTEGER NOT NULL,
-            frame_number INTEGER NOT NULL CHECK(frame_number >= 1 AND frame_number <= 10),
-            roll_1 INTEGER CHECK(roll_1 >= 0 AND roll_1 <= 10),
-            roll_2 INTEGER CHECK(roll_2 >= 0 AND roll_2 <= 10),
-            roll_3 INTEGER CHECK(roll_3 >= 0 AND roll_3 <= 10),
-            FOREIGN KEY (outing_id) REFERENCES outings(id) ON DELETE CASCADE,
-            FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-            UNIQUE(outing_id, player_id, frame_number)
-        )
-    ''')
-    
-    # Agregar columna final_position si no existe
-    try:
+    if 'strikes_count' not in columns:
+        cursor.execute('ALTER TABLE outing_players ADD COLUMN strikes_count INTEGER DEFAULT 0')
+    if 'spares_count' not in columns:
+        cursor.execute('ALTER TABLE outing_players ADD COLUMN spares_count INTEGER DEFAULT 0')
+    if 'final_position' not in columns:
         cursor.execute('ALTER TABLE outing_players ADD COLUMN final_position INTEGER')
-    except:
-        pass  # Ya existe
-    
+
+    # 3. Sincronizar STRIKES y SPARES de partidas viejas
+    # Lógica de Spares: (roll_1 + roll_2 = 10) y roll_1 < 10. 
+    # En el frame 10: se cuenta si roll1+roll2=10 (con roll1<10) O si tras un strike, roll2+roll3=10 (con roll2<10).
+    cursor.execute('''
+        UPDATE outing_players 
+        SET 
+        strikes_count = (
+            SELECT (SELECT COUNT(*) FROM frames WHERE frames.outing_id = outing_players.outing_id AND frames.player_id = outing_players.player_id AND frame_number < 10 AND roll_1 = 10) +
+                   (SELECT (CASE WHEN roll_1 = 10 THEN 1 ELSE 0 END + CASE WHEN roll_2 = 10 THEN 1 ELSE 0 END + CASE WHEN roll_3 = 10 THEN 1 ELSE 0 END) FROM frames WHERE frames.outing_id = outing_players.outing_id AND frames.player_id = outing_players.player_id AND frame_number = 10)
+        ),
+        spares_count = (
+            SELECT (SELECT COUNT(*) FROM frames WHERE frames.outing_id = outing_players.outing_id AND frames.player_id = outing_players.player_id AND frame_number < 10 AND roll_1 < 10 AND (roll_1 + roll_2 = 10)) +
+                   (SELECT (CASE WHEN roll_1 < 10 AND roll_1 + roll_2 = 10 THEN 1 
+                                 WHEN roll_1 = 10 AND roll_2 < 10 AND roll_2 + roll_3 = 10 THEN 1 ELSE 0 END) FROM frames WHERE frames.outing_id = outing_players.outing_id AND frames.player_id = outing_players.player_id AND frame_number = 10)
+        )
+    ''')
+
     conn.commit()
     conn.close()
-
+    print("Base de datos sincronizada con Strikes y Spares.")
 # ============================================================================
 # PARSING Y CONVERSIÓN
 # ============================================================================
@@ -351,7 +329,79 @@ def update_positions(outing_id):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Obtener datos rápidos para la Home
+    cursor.execute('SELECT COUNT(*) FROM outings')
+    total_outings = cursor.fetchone()[0]
+    
+    cursor.execute('SELECT COUNT(*) FROM players')
+    total_players = cursor.fetchone()[0]
+    
+    conn.close()
+    return render_template('index.html', total_outings=total_outings, total_players=total_players)
+
+@app.route('/stats')
+def stats():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 1. Top 5 mejores puntajes históricos
+    cursor.execute('''
+        SELECT p.name, op.final_score, o.date, o.location
+        FROM outing_players op
+        JOIN players p ON op.player_id = p.id
+        JOIN outings o ON op.outing_id = o.id
+        WHERE op.final_score IS NOT NULL
+        ORDER BY op.final_score DESC LIMIT 5
+    ''')
+    top_scores = cursor.fetchall()
+    
+    # 2. Datos para el gráfico (Top 5 promedios)
+    cursor.execute('SELECT name, average_score FROM players WHERE total_games > 0 ORDER BY average_score DESC LIMIT 5')
+    active_players = [dict(row) for row in cursor.fetchall()]
+
+    # 3. RÉCORD STRIKES (1 Partida)
+    cursor.execute('''
+        SELECT p.name, MAX(op.strikes_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        WHERE op.strikes_count IS NOT NULL GROUP BY p.id ORDER BY value DESC LIMIT 3
+    ''')
+    strike_kings = cursor.fetchall()
+
+    # 4. RÉCORD STRIKES ACUMULADOS
+    cursor.execute('''
+        SELECT p.name, SUM(op.strikes_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        GROUP BY p.id ORDER BY value DESC LIMIT 3
+    ''')
+    total_strikes = cursor.fetchall()
+
+    # 5. RÉCORD SPARES (1 Partida)
+    cursor.execute('''
+        SELECT p.name, MAX(op.spares_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        WHERE op.spares_count IS NOT NULL GROUP BY p.id ORDER BY value DESC LIMIT 3
+    ''')
+    spare_kings = cursor.fetchall()
+
+    # 6. RÉCORD SPARES ACUMULADOS
+    cursor.execute('''
+        SELECT p.name, SUM(op.spares_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        GROUP BY p.id ORDER BY value DESC LIMIT 3
+    ''')
+    total_spares = cursor.fetchall()
+    
+    conn.close()
+    return render_template('stats.html', 
+                           top_scores=top_scores, 
+                           active_players=active_players,
+                           strike_kings=strike_kings,
+                           total_strikes=total_strikes,
+                           spare_kings=spare_kings,
+                           total_spares=total_spares)
 
 @app.route('/players', methods=['GET', 'POST'])
 def players():
@@ -399,6 +449,18 @@ def player_detail(player_id):
     conn.close()
     
     return render_template('player_detail.html', player=player, games=games)
+
+@app.route('/player/<int:player_id>/delete', methods=['POST'])
+def delete_player(player_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # El ON DELETE CASCADE en la BD se encargará de borrar sus frames y stats
+    cursor.execute('DELETE FROM players WHERE id = ?', (player_id,))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('players'))
 
 @app.route('/outings', methods=['GET', 'POST'])
 def outings():
@@ -554,7 +616,6 @@ def add_player_to_outing(outing_id):
 @app.route('/outing/<int:outing_id>/update_roll', methods=['POST'])
 def update_roll(outing_id):
     data = request.json
-
     try:
         player_id = int(data.get('player_id'))
         frame_number = int(data.get('frame_number'))
@@ -563,83 +624,61 @@ def update_roll(outing_id):
         return jsonify({'error': 'Datos inválidos'}), 400
 
     symbol = data.get('symbol', '').strip()
-    
     if not all([player_id, frame_number, roll_number, symbol]):
         return jsonify({'error': 'Datos incompletos'}), 400
     
     conn = get_db()
     cursor = conn.cursor()
     
-    # Obtener el frame actual
-    cursor.execute('''
-        SELECT * FROM frames
-        WHERE outing_id = ? AND player_id = ? AND frame_number = ?
-    ''', (outing_id, player_id, frame_number))
-    
+    cursor.execute('SELECT * FROM frames WHERE outing_id = ? AND player_id = ? AND frame_number = ?', (outing_id, player_id, frame_number))
     frame = cursor.fetchone()
-    
     if not frame:
         conn.close()
         return jsonify({'error': 'Frame no encontrado'}), 404
     
-    # Obtener tiros previos en este frame
     previous_rolls = []
-    if roll_number >= 2 and frame['roll_1'] is not None:
-        previous_rolls.append(frame['roll_1'])
-    if roll_number == 3 and frame['roll_2'] is not None:
-        previous_rolls.append(frame['roll_2'])
+    if roll_number >= 2 and frame['roll_1'] is not None: previous_rolls.append(frame['roll_1'])
+    if roll_number == 3 and frame['roll_2'] is not None: previous_rolls.append(frame['roll_2'])
     
-    # Validar
     is_valid, error_msg, number = validate_roll(symbol, frame_number, roll_number, previous_rolls)
-    
     if not is_valid:
         conn.close()
         return jsonify({'error': error_msg}), 400
     
-    # Actualizar el tiro
-    column = f'roll_{roll_number}'
-    cursor.execute(f'''
-        UPDATE frames
-        SET {column} = ?
-        WHERE outing_id = ? AND player_id = ? AND frame_number = ?
-    ''', (number, outing_id, player_id, frame_number))
+    cursor.execute(f'UPDATE frames SET roll_{roll_number} = ? WHERE outing_id = ? AND player_id = ? AND frame_number = ?', (number, outing_id, player_id, frame_number))
     
+    # --- ACTUALIZAR STRIKES Y SPARES EN TIEMPO REAL ---
+    cursor.execute('''
+        UPDATE outing_players 
+        SET 
+        strikes_count = (
+            SELECT (SELECT COUNT(*) FROM frames WHERE outing_id = ? AND player_id = ? AND frame_number < 10 AND roll_1 = 10) +
+                   (SELECT (CASE WHEN roll_1 = 10 THEN 1 ELSE 0 END + CASE WHEN roll_2 = 10 THEN 1 ELSE 0 END + CASE WHEN roll_3 = 10 THEN 1 ELSE 0 END) FROM frames WHERE outing_id = ? AND player_id = ? AND frame_number = 10)
+        ),
+        spares_count = (
+            SELECT (SELECT COUNT(*) FROM frames WHERE outing_id = ? AND player_id = ? AND frame_number < 10 AND roll_1 < 10 AND (roll_1 + roll_2 = 10)) +
+                   (SELECT (CASE WHEN roll_1 < 10 AND roll_1 + roll_2 = 10 THEN 1 
+                                 WHEN roll_1 = 10 AND roll_2 < 10 AND roll_2 + roll_3 = 10 THEN 1 ELSE 0 END) FROM frames WHERE outing_id = ? AND player_id = ? AND frame_number = 10)
+        )
+        WHERE outing_id = ? AND player_id = ?
+    ''', (outing_id, player_id, outing_id, player_id, outing_id, player_id, outing_id, player_id, outing_id, player_id))
+    # --------------------------------------------------
+
     conn.commit()
     
-    # Recalcular scores para este jugador
-    cursor.execute('''
-        SELECT * FROM frames 
-        WHERE outing_id = ? AND player_id = ?
-        ORDER BY frame_number
-    ''', (outing_id, player_id))
-    
+    # Recalcular scores y estadísticas (el resto del código sigue igual...)
+    cursor.execute('SELECT * FROM frames WHERE outing_id = ? AND player_id = ? ORDER BY frame_number', (outing_id, player_id))
     all_frames = cursor.fetchall()
     scores = calculate_scores(all_frames)
     
-    # Actualizar final_score si está completo
     if scores[9] is not None:
-        cursor.execute('''
-            UPDATE outing_players
-            SET final_score = ?
-            WHERE outing_id = ? AND player_id = ?
-        ''', (scores[9], outing_id, player_id))
-        
+        cursor.execute('UPDATE outing_players SET final_score = ? WHERE outing_id = ? AND player_id = ?', (scores[9], outing_id, player_id))
         conn.commit()
-        
-        # Actualizar posiciones de todos los jugadores en esta salida
         update_positions(outing_id)
-        
-        # Actualizar estadísticas del jugador
         update_player_stats(player_id)
     
     conn.close()
-    
-    return jsonify({
-        'success': True,
-        'number': number,
-        'scores': scores
-    })
-
+    return jsonify({'success': True, 'number': number, 'scores': scores})
 # ============================================================================
 # RUTAS PWA (Progressive Web App)
 # ============================================================================
@@ -655,8 +694,7 @@ def service_worker():
     response.headers['Content-Type'] = 'application/javascript'
     return response
 
+init_db()
 
 if __name__ == '__main__':
-    if not os.path.exists(DATABASE):
-        init_db()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5002)

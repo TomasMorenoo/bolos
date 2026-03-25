@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="stats-container">
+    <h1 class="page-title">Estadísticas de la Liga</h1>
+
+    <div class="records-grid">
+        
+        <div class="record-group">
+            <h2 class="section-subtitle">Récord Strikes (1 Partida)</h2>
+            <div class="record-cards-container">
+                {% for king in strike_kings %}
+                <div class="mini-card">
+                    <span class="mini-name">{{ king.name }}</span>
+                    <span class="mini-value">{{ king.value }} 🔥</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="record-group">
+            <h2 class="section-subtitle">Total Strikes Acumulados</h2>
+            <div class="record-cards-container">
+                {% for s in total_strikes %}
+                <div class="mini-card total">
+                    <span class="mini-name">{{ s.name }}</span>
+                    <span class="mini-value">{{ s.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="record-group">
+            <h2 class="section-subtitle">Récord Spares (1 Partida)</h2>
+            <div class="record-cards-container">
+                {% for king in spare_kings %}
+                <div class="mini-card spare">
+                    <span class="mini-name">{{ king.name }}</span>
+                    <span class="mini-value">{{ king.value }} ⚒️</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="record-group">
+            <h2 class="section-subtitle">Total Spares Acumulados</h2>
+            <div class="record-cards-container">
+                {% for s in total_spares %}
+                <div class="mini-card spare-total">
+                    <span class="mini-name">{{ s.name }}</span>
+                    <span class="mini-value">{{ s.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-section">
+        <h2>Promedios de Puntos</h2>
+        <canvas id="avgChart"></canvas>
+    </div>
+
+    <div class="top-scores-section">
+        <h2>Top 5 Mejores Partidas</h2>
+        <div class="stats-table-wrapper">
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Jugador</th>
+                        <th>Puntos</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in top_scores %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ score.name }}</strong></td>
+                        <td><span class="score-pill">{{ score.final_score }}</span></td>
+                        <td>{{ score.date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('avgChart').getContext('2d');
+    const players = {{ active_players | tojson }};
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: players.map(p => p.name),
+            datasets: [{
+                label: 'Promedio',
+                data: players.map(p => p.average_score),
+                backgroundColor: 'rgba(39, 174, 96, 0.6)',
+                borderColor: '#27ae60',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, grid: { color: '#333' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+
+<style>
+    .section-subtitle { font-size: 1.1rem; color: #aaa; margin-bottom: 10px; margin-top: 20px; text-align: center; }
+    .record-cards-container { display: flex; flex-direction: column; gap: 8px; }
+    
+    .mini-card {
+        background: #1e1e1e;
+        padding: 12px 15px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid #f1c40f; /* Color Strikes */
+    }
+    .mini-card.total { border-left-color: #f39c12; }
+    .mini-card.spare { border-left-color: #3498db; } /* Color Spares */
+    .mini-card.spare-total { border-left-color: #2980b9; }
+
+    .mini-name { font-weight: bold; }
+    .mini-value { font-size: 1.1rem; font-weight: 800; }
+
+    .stats-table-wrapper { overflow-x: auto; background: #1e1e1e; border-radius: 15px; padding: 10px; }
+    .stats-table { width: 100%; border-collapse: collapse; }
+    .stats-table th, .stats-table td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+    .score-pill { background: #27ae60; padding: 4px 12px; border-radius: 50px; font-weight: bold; }
+
+    .chart-section { margin: 30px 0; background: #1e1e1e; padding: 20px; border-radius: 15px; }
+
+    /* Grid para móvil: 1 columna. Para tablet/PC: 2 columnas */
+    .records-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+</style>
+{% endblock %}

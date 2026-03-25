@@ -3,37 +3,64 @@
 {% block title %}Bowling Tracker - Inicio{% endblock %}
 
 {% block content %}
-<h1>🎳 Bowling Score Tracker</h1>
-
-<div style="margin-top: 40px;">
-    <h2>Bienvenido</h2>
-    <p style="font-size: 18px; color: #666; line-height: 1.6;">
-        Sistema de registro de partidas de bowling. Cada salida es una partida completa donde múltiples jugadores pueden competir.
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 40px; color: white; text-align: center; margin-bottom: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+    <i class="fa-solid fa-bowling-ball" style="font-size: 60px; margin-bottom: 20px; color: #fff; opacity: 0.9;"></i>
+    <h1 style="color: white; font-size: 36px; margin-bottom: 10px;">Bowling Tracker</h1>
+    <p style="font-size: 18px; opacity: 0.8; max-width: 600px; margin: 0 auto 30px;">
+        Registra tus partidas, analiza tu rendimiento y compite por el mejor score histórico.
     </p>
-    
-    <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; text-align: center;">
-            <h3 style="color: #667eea; margin-bottom: 15px;">Salidas</h3>
-            <p style="margin-bottom: 20px; color: #666;">Crea una salida, agrega jugadores y empieza a jugar</p>
-            <a href="/outings" class="btn">Ver Salidas</a>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; text-align: center;">
-            <h3 style="color: #667eea; margin-bottom: 15px;">Jugadores</h3>
-            <p style="margin-bottom: 20px; color: #666;">Gestiona jugadores y consulta estadísticas históricas</p>
-            <a href="/players" class="btn">Ver Jugadores</a>
-        </div>
+    <a href="/outings" class="btn" style="background: white; color: #667eea; font-weight: bold; font-size: 18px; padding: 15px 30px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
+        <i class="fa-solid fa-play"></i> Nueva Partida
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; text-align: center; border-bottom: 4px solid #667eea;">
+        <i class="fa-solid fa-calendar-check" style="font-size: 30px; color: #667eea; margin-bottom: 15px;"></i>
+        <div style="font-size: 32px; font-weight: bold; color: #333;">{{ total_outings }}</div>
+        <div style="color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Salidas Jugadas</div>
     </div>
     
-    <div style="margin-top: 40px; background: #e7f3ff; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-        <h3 style="color: #333; margin-bottom: 10px;">Cómo funciona</h3>
-        <ol style="list-style-position: inside; color: #666; line-height: 2;">
-            <li>Crea jugadores en la sección de Jugadores</li>
-            <li>Crea una Salida con fecha y lugar</li>
-            <li>Agrega jugadores a la salida</li>
-            <li>Carga los tiros directamente en la tabla</li>
-            <li>Las estadísticas se actualizan automáticamente</li>
-        </ol>
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; text-align: center; border-bottom: 4px solid #764ba2;">
+        <i class="fa-solid fa-users" style="font-size: 30px; color: #764ba2; margin-bottom: 15px;"></i>
+        <div style="font-size: 32px; font-weight: bold; color: #333;">{{ total_players }}</div>
+        <div style="color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Jugadores Registrados</div>
     </div>
 </div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+    <a href="/players" style="text-decoration: none; color: inherit;">
+        <div class="list-item" style="padding: 20px; transition: transform 0.2s; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 50%; color: #667eea;">
+                    <i class="fa-solid fa-address-card fa-xl"></i>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 5px; color: #333;">Gestionar Jugadores</h3>
+                    <p style="color: #666; font-size: 14px; margin: 0;">Agrega amigos o revisa sus perfiles.</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color: #ccc;"></i>
+        </div>
+    </a>
+
+    <a href="/stats" style="text-decoration: none; color: inherit;">
+        <div class="list-item" style="padding: 20px; transition: transform 0.2s; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: rgba(118, 75, 162, 0.1); padding: 15px; border-radius: 50%; color: #764ba2;">
+                    <i class="fa-solid fa-trophy fa-xl"></i>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 5px; color: #333;">Salón de la Fama</h3>
+                    <p style="color: #666; font-size: 14px; margin: 0;">Mira quién tiene el récord histórico.</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-chevron-right" style="color: #ccc;"></i>
+        </div>
+    </a>
+</div>
+
+<style>
+    .list-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+</style>
 {% endblock %}

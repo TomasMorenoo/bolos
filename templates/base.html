@@ -6,9 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Bowling Tracker{% endblock %}</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         * {
             margin: 0;
@@ -37,26 +41,48 @@
             margin-bottom: 20px;
         }
         
+        /* --- ESTILOS DEL NUEVO NAVBAR --- */
         nav {
             background: #667eea;
-            padding: 15px;
+            padding: 0 20px;
             border-radius: 8px;
             margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-brand {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
         }
         
-        nav a {
+        nav a.nav-item {
             color: white;
             text-decoration: none;
-            padding: 10px 20px;
-            margin-right: 10px;
-            border-radius: 5px;
-            display: inline-block;
-            transition: background 0.3s;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
         }
         
-        nav a:hover {
-            background: rgba(255,255,255,0.2);
+        nav a.nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-bottom: 3px solid #fff;
         }
+        /* -------------------------------- */
         
         .form-group {
             margin-bottom: 20px;
@@ -138,12 +164,18 @@
 </head>
 <body>
     <div class="container">
-        <nav>
-            <a href="/">Inicio</a>
-            <a href="/players">Jugadores</a>
-            <a href="/outings">Salidas</a>
-        </nav>
         
+        <nav>
+            <a href="/" class="nav-brand">
+                <i class="fa-solid fa-bowling-ball"></i> StrikeApp
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-item"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="/players" class="nav-item"><i class="fa-solid fa-users"></i> Jugadores</a>
+                <a href="/outings" class="nav-item"><i class="fa-solid fa-calendar-days"></i> Salidas</a>
+                <a href="/stats" class="nav-item"><i class="fa-solid fa-chart-simple"></i> Stats</a>
+            </div>
+        </nav>
         {% block content %}{% endblock %}
     </div>
 
