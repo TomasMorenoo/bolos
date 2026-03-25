@@ -347,20 +347,21 @@ def stats():
     conn = get_db()
     cursor = conn.cursor()
     
-    # 1. Top 5 mejores puntajes históricos
+    # 1. RÉCORD STRIKES ACUMULADOS
     cursor.execute('''
-        SELECT p.name, op.final_score, o.date, o.location
-        FROM outing_players op
-        JOIN players p ON op.player_id = p.id
-        JOIN outings o ON op.outing_id = o.id
-        WHERE op.final_score IS NOT NULL
-        ORDER BY op.final_score DESC LIMIT 5
+        SELECT p.name, SUM(op.strikes_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        GROUP BY p.id ORDER BY value DESC LIMIT 3
     ''')
-    top_scores = cursor.fetchall()
-    
-    # 2. Datos para el gráfico (Top 5 promedios)
-    cursor.execute('SELECT name, average_score FROM players WHERE total_games > 0 ORDER BY average_score DESC LIMIT 5')
-    active_players = [dict(row) for row in cursor.fetchall()]
+    total_strikes = cursor.fetchall()
+
+    # 2. RÉCORD SPARES ACUMULADOS
+    cursor.execute('''
+        SELECT p.name, SUM(op.spares_count) as value
+        FROM outing_players op JOIN players p ON op.player_id = p.id
+        GROUP BY p.id ORDER BY value DESC LIMIT 3
+    ''')
+    total_spares = cursor.fetchall()
 
     # 3. RÉCORD STRIKES (1 Partida)
     cursor.execute('''
@@ -370,15 +371,7 @@ def stats():
     ''')
     strike_kings = cursor.fetchall()
 
-    # 4. RÉCORD STRIKES ACUMULADOS
-    cursor.execute('''
-        SELECT p.name, SUM(op.strikes_count) as value
-        FROM outing_players op JOIN players p ON op.player_id = p.id
-        GROUP BY p.id ORDER BY value DESC LIMIT 3
-    ''')
-    total_strikes = cursor.fetchall()
-
-    # 5. RÉCORD SPARES (1 Partida)
+    # 4. RÉCORD SPARES (1 Partida)
     cursor.execute('''
         SELECT p.name, MAX(op.spares_count) as value
         FROM outing_players op JOIN players p ON op.player_id = p.id
@@ -386,22 +379,23 @@ def stats():
     ''')
     spare_kings = cursor.fetchall()
 
-    # 6. RÉCORD SPARES ACUMULADOS
+    # 5. Top 5 mejores puntajes históricos
     cursor.execute('''
-        SELECT p.name, SUM(op.spares_count) as value
-        FROM outing_players op JOIN players p ON op.player_id = p.id
-        GROUP BY p.id ORDER BY value DESC LIMIT 3
+        SELECT p.name, op.final_score, o.date
+        FROM outing_players op JOIN players p ON op.player_id = p.id JOIN outings o ON op.outing_id = o.id
+        WHERE op.final_score IS NOT NULL ORDER BY op.final_score DESC LIMIT 5
     ''')
-    total_spares = cursor.fetchall()
+    top_scores = cursor.fetchall()
+    
+    # 6. Datos para el gráfico
+    cursor.execute('SELECT name, average_score FROM players WHERE total_games > 0 ORDER BY average_score DESC LIMIT 5')
+    active_players = [dict(row) for row in cursor.fetchall()]
     
     conn.close()
     return render_template('stats.html', 
-                           top_scores=top_scores, 
-                           active_players=active_players,
-                           strike_kings=strike_kings,
-                           total_strikes=total_strikes,
-                           spare_kings=spare_kings,
-                           total_spares=total_spares)
+                           total_strikes=total_strikes, total_spares=total_spares,
+                           strike_kings=strike_kings, spare_kings=spare_kings,
+                           top_scores=top_scores, active_players=active_players)
 
 @app.route('/players', methods=['GET', 'POST'])
 def players():
