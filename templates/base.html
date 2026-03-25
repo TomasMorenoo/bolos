@@ -160,6 +160,49 @@
             margin-bottom: 20px;
             border: 1px solid #c3e6cb;
         }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            nav {
+                flex-wrap: wrap;
+                padding: 10px 15px;
+                gap: 5px;
+            }
+
+            .nav-brand {
+                font-size: 17px;
+            }
+
+            .nav-links {
+                width: 100%;
+                justify-content: space-around;
+                border-top: 1px solid rgba(255,255,255,0.2);
+                padding-top: 5px;
+                margin-top: 5px;
+            }
+
+            nav a.nav-item {
+                padding: 8px 10px;
+                font-size: 13px;
+                flex-direction: column;
+                gap: 4px;
+                text-align: center;
+                border-bottom: none;
+            }
+
+            nav a.nav-item:hover {
+                border-bottom: none;
+                border-radius: 6px;
+            }
+        }
     </style>
 </head>
 <body>

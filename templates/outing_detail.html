@@ -21,7 +21,7 @@
     <form method="POST" action="/outing/{{ outing.id }}/add_player">
         <div class="form-group">
             <label for="player_id">Seleccionar Jugador</label>
-            <select id="player_id" name="player_id" required style="width: auto; min-width: 300px;">
+            <select id="player_id" name="player_id" required style="width: 100%; min-width: 200px;">
                 <option value="">-- Selecciona un jugador --</option>
                 {% for player in all_players %}
                 <option value="{{ player.id }}">{{ player.name }}</option>
@@ -467,6 +467,16 @@ function showSuccess(message) {
 
 .success {
     animation: fadeIn 0.3s;
+}
+
+@media (max-width: 768px) {
+    .roll-input {
+        font-size: 14px !important;
+        min-height: 44px;
+    }
+    .frame-score {
+        font-size: 16px !important;
+    }
 }
 </style>
 {% endblock %}
