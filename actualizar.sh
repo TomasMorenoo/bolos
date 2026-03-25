@@ -3,7 +3,7 @@
 # ==========================================
 # CONFIGURACIÓN (Cambia esto por tu ruta real)
 # ==========================================
-PROJECT_DIR="/ruta/absoluta/a/tu/carpeta/bolos"
+PROJECT_DIR="/vps/clientes/bolos"
 
 # Moverse al directorio del proyecto automáticamente
 cd "$PROJECT_DIR" || { echo "❌ Error: No se encontró el directorio $PROJECT_DIR"; exit 1; }
