@@ -1,8 +1,11 @@
 self.addEventListener('install', (e) => {
-    console.log('[Bolos] Service Worker Instalado');
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+    self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
-    // Vacío (Igual que en Mobatai). 
-    // Cumple el requisito de PWA pero deja que el navegador maneje todo normal sin fallar.
+    e.respondWith(fetch(e.request));
 });
